@@ -2205,7 +2205,10 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
   /** Defer constraining type variables when compared against prototypes */
   def isMatchedByProto(proto: ProtoType, tp: Type): Boolean = tp.stripTypeVar match {
     case tp: TypeParamRef if constraint contains tp => true
-    case _ => proto.isMatchedBy(tp, keepConstraint = true)
+    case _ => 
+      println(i"proto: $proto")
+      println(i"tp: $tp")
+      proto.isMatchedBy(tp, keepConstraint = true)
   }
 
   /** Narrow gadt.bounds for the type parameter referenced by `tr` to include

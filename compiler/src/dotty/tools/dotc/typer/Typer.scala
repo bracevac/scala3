@@ -3993,6 +3993,8 @@ class Typer(@constructorOnly nestingLevel: Int = 0) extends Namer
       // get all the alternatives
       val altDenots =
         val allDenots = ref.denot.alternatives
+        println(i"tree.symbol.id: ${tree.symbol.id}")
+        println(i"ref: $ref")
         if pt.isExtensionApplyProto then allDenots.filter(_.symbol.is(ExtensionMethod))
         else allDenots
 
@@ -4660,6 +4662,8 @@ class Typer(@constructorOnly nestingLevel: Int = 0) extends Namer
           case _ => NoType
       case _ => NoType
 
+    println(i"tree.tpe.widen: ${tree.tpe.widen}")
+    println(i"tree.tpe: ${tree.tpe}")
     tree match {
       case _: MemberDef | _: PackageDef | _: Import | _: WithoutTypeOrPos[?] | _: Closure => tree
       case _ => tree.tpe.widen match {

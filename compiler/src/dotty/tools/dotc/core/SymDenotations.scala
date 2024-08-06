@@ -2183,7 +2183,10 @@ object SymDenotations {
       val pre1 = pre match
         case pre: OrType => pre.widenUnion
         case _ => pre
-      raw.filterWithFlags(required, excluded).asSeenFrom(pre1).toDenot(pre1)
+      if name == "bar".toTermName then println(s"raw: $raw")
+      val res = raw.filterWithFlags(required, excluded).asSeenFrom(pre1).toDenot(pre1)
+      if name == "bar".toTermName then println(i"res: $res")
+      res
 
     final def findMemberNoShadowingBasedOnFlags(name: Name, pre: Type,
         required: FlagSet = EmptyFlags, excluded: FlagSet = EmptyFlags)(using Context): Denotation =
