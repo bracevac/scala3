@@ -336,7 +336,7 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
      */
     inline def tryHandleCaptureVars: Int =
       if !(isCaptureCheckingOrSetup && isCapSet(tp1) && isCapSet(tp2)) then -1
-      else if (captureSet(tp1).subCaptures(captureSet(tp2), true).isOK) then 1
+      else if (captureSet(tp1).subCaptures(captureSet(tp2), frozenConstraint).isOK) then 1
       else 0
 
     def firstTry: Boolean = tp2 match {
