@@ -28,7 +28,7 @@ def testTrans[C^, D >: CapSet <: C, E >: CapSet <: D, F >: C <: CapSet^] =
   val c4: C = f1     // error
   val e4: E = f1     // error
   val e5: E = d1     // error
-  val c4: CapSet^{C^} = e1
+  val c5: CapSet^{C^} = e1
 
 
 trait A[+T]
