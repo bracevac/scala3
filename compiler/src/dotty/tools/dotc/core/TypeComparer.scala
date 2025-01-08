@@ -298,34 +298,6 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
       }
     }
 
-     //TODO move the following functions somewhere more appropriate
-    /**
-     * Is the type `tp` a `CapSet` type, i.e., a capture variable?
-     *
-     * @param tp The type to check
-     * @param includeCapSet Whether to include the bare `CapSet` type itself in the check, false at the top level
-     */
-    def isCapSet(tp: Type, includeCapSet: Boolean = false): Boolean = tp match {
-      case tp: TypeRef => (includeCapSet && (tp.symbol eq defn.Caps_CapSet)) || {
-        tp.underlying match
-          case TypeBounds(lo, hi) => isCapSet(lo, true) && isCapSet(hi, true)
-          case TypeAlias(alias)   => isCapSet(alias) // TODO: test cases involving type aliases
-          case _                  => false
-      }
-      case tp: SingletonType => isCapSet(tp.underlying)
-      case CapturingType(parent, _) => isCapSet(parent, true)
-      case _ => false
-    }
-
-    /**
-     * Assumes that isCapSet(tp) is true.
-     */
-    def captureSet(tp: Type): CaptureSet = tp match
-      case CapturingType(_,c) => c
-      case tp: TypeRef if tp.symbol eq defn.Caps_CapSet => CaptureSet.empty
-      case tp: SingletonType => captureSet(tp.underlying)
-      case tp: CaptureRef => CaptureSet(tp)
-
     /** In capture checking, implements the logic to compare type variables which represent
      *  capture variables.
      *
@@ -335,8 +307,8 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
      *           0 if both tp1 and tp2 are capture variables but tp1 is not a subcapture of tp2.
      */
     inline def tryHandleCaptureVars: Int =
-      if !(isCaptureCheckingOrSetup && isCapSet(tp1) && isCapSet(tp2)) then -1
-      else if (captureSet(tp1).subCaptures(captureSet(tp2), frozenConstraint).isOK) then 1
+      if !(isCaptureCheckingOrSetup && tp1.isCapSet() && tp2.isCapSet()) then -1
+      else if (subCaptures(tp1.captureSetOfCapSet, tp2.captureSetOfCapSet, frozenConstraint).isOK) then 1
       else 0
 
     def firstTry: Boolean = tp2 match {
@@ -389,7 +361,7 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
                 && !(sym1.isClass && sym2.isClass)  // class types don't subtype each other
                 || {val cv = tryHandleCaptureVars
                     if (cv < 0) then thirdTryNamed(tp2)
-                    else cv > 0 }
+                    else cv != 0 }
             case _ =>
               secondTry
         end compareNamed
@@ -477,6 +449,8 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
 
     def secondTry: Boolean = tp1 match {
       case tp1: NamedType =>
+        val cv = tryHandleCaptureVars
+        if (cv >= 0) then return cv != 0
         tp1.info match {
           case info1: TypeAlias =>
             if (recur(info1.alias, tp2)) return true
