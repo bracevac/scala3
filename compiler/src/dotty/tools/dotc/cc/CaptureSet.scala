@@ -1073,9 +1073,6 @@ object CaptureSet:
     case ReachCapability(ref1) =>
       ref1.widen.deepCaptureSet(includeTypevars = true)
         .showing(i"Deep capture set of $ref: ${ref1.widen} = ${result}", capt)
-    case tp : TypeRef if tp.isCapSet() => tp.underlying match
-      case TypeBounds(lo, hi) if hi.isCapSet() => hi.captureSetOfCapSet
-      case _ => ofType(ref.underlying, followResult = true)
     case _ =>
       if ref.isMaxCapability then ref.singletonCaptureSet
       else ofType(ref.underlying, followResult = true)
@@ -1088,10 +1085,9 @@ object CaptureSet:
           tp.captureSet
         case tp: TermParamRef =>
           tp.captureSet
-        case _: TypeRef =>
-          empty
-        case _: TypeParamRef =>
-          empty
+        case tp: (TypeRef | TypeParamRef) =>
+          if tp.derivesFrom(defn.Caps_CapSet) then tp.captureSet
+          else empty
         case CapturingType(parent, refs) =>
           recur(parent) ++ refs
         case tp @ AnnotatedType(parent, ann) if ann.hasSymbol(defn.ReachCapabilityAnnot) =>

@@ -307,8 +307,8 @@ class TypeComparer(@constructorOnly initctx: Context) extends ConstraintHandling
      *           0 if both tp1 and tp2 are capture variables but tp1 is not a subcapture of tp2.
      */
     inline def tryHandleCaptureVars: Int =
-      if !(isCaptureCheckingOrSetup && tp1.isCapSet() && tp2.isCapSet()) then -1
-      else if (subCaptures(tp1.captureSetOfCapSet, tp2.captureSetOfCapSet, frozenConstraint).isOK) then 1
+      if !(isCaptureCheckingOrSetup && tp1.derivesFrom(defn.Caps_CapSet) && tp1.derivesFrom(defn.Caps_CapSet)) then -1
+      else if (subCaptures(tp1.captureSet, tp2.captureSet, frozenConstraint).isOK) then 1
       else 0
 
     def firstTry: Boolean = tp2 match {

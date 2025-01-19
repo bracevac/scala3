@@ -170,32 +170,6 @@ extension (tree: Tree)
 
 extension (tp: Type)
 
-  /**
-   * Is the type `tp` a `CapSet` type, i.e., a capture variable?
-   *
-   * @param tp The type to check
-   * @param includeCapSet Whether to include the bare `CapSet` type itself in the check, false at the top level
-   */
-  final def isCapSet(includeCapSet: Boolean = false)(using Context): Boolean = tp match
-    case tp: TypeRef => (includeCapSet && (tp.symbol eq defn.Caps_CapSet)) || {
-      tp.underlying match
-        case TypeBounds(lo, hi) => lo.isCapSet(true) && hi.isCapSet(true)
-        case TypeAlias(alias)   => alias.isCapSet() // TODO: test cases involving type aliases
-        case _                  => false
-    }
-    case tp: SingletonType => tp.underlying.isCapSet()
-    case CapturingType(parent, _) => parent.isCapSet(true)
-    case _ => false
-
-  /**
-   * The capture set of a capture variable. Assumes that tp.isCapSet() is true.
-   */
-  final def captureSetOfCapSet(using Context): CaptureSet = tp match
-    case CapturingType(_,c) => c
-    case tp: TypeRef if tp.symbol eq defn.Caps_CapSet => CaptureSet.empty
-    case tp: SingletonType => tp.underlying.captureSetOfCapSet
-    case tp: CaptureRef => CaptureSet(tp)
-
   /** Is this type a CaptureRef that can be tracked?
    *  This is true for
    *    - all ThisTypes and all TermParamRef,
