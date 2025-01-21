@@ -6163,9 +6163,16 @@ object Types extends TypeUtils {
     def isRange(tp: Type): Boolean = tp.isInstanceOf[Range]
 
     protected def mapCapturingType(tp: Type, parent: Type, refs: CaptureSet, v: Int): Type =
+      println(i"TypeMap capturing $tp in $parent with $refs and variance $v")
       val saved = variance
       variance = v
-      try derivedCapturingType(tp, this(parent), refs.map(this))
+      try
+        val mappedParent = this(parent)
+        val mappedRefs = refs.map(this)
+        println(i"TypeMap mapped parent: $mappedParent, refs: $mappedRefs")
+        val derived = derivedCapturingType(tp, this(parent), refs.map(this))
+        println(i"TypeMap derived: $derived")
+        derived
       finally variance = saved
 
     /** Utility method. Maps the supertype of a type proxy. Returns the
@@ -6191,9 +6198,15 @@ object Types extends TypeUtils {
           newImportSymbol(tp.symbol.owner, e1).termRef
 
         case tp: NamedType =>
-          if stopBecauseStaticOrLocal(tp) then tp
+          if (tp.symbol eq defn.Caps_CapSet) println(i"TypeMap.NamedType: $tp")
+          if stopBecauseStaticOrLocal(tp) then {
+            if (tp.symbol eq defn.Caps_CapSet)
+              println(i"TypeMap.NamedType.STOP")
+            tp
+          }
           else
             val prefix1 = atVariance(variance max 0)(this(tp.prefix)) // see comment of TypeAccumulator's applyToPrefix
+            println(i"TypeMap.NamedType: $tp, prefix1: $prefix1")
             derivedSelect(tp, prefix1)
 
         case tp: AppliedType =>

@@ -879,15 +879,27 @@ object CaptureSet:
    *        - Otherwise assertion failure
    */
   def extrapolateCaptureRef(r: CaptureRef, tm: TypeMap, variance: Int)(using Context): CaptureSet =
-    val r1 = tm(r)
-    val upper = r1.captureSet
-    def isExact =
-      upper.isAlwaysEmpty
-      || upper.isConst && upper.elems.size == 1 && upper.elems.contains(r1)
-      || r.derivesFrom(defn.Caps_CapSet)
-    if variance > 0 || isExact then upper
-    else if variance < 0 then CaptureSet.EmptyWithProvenance(r, r1)
-    else upper.maybe
+    println(i"extrapolate $r")
+    println(i"tm.getClass: ${tm.getClass}")
+    println(i"variance: $variance")
+    println()
+    try
+      val r1 = tm(r)
+      println(i"extrapolate.r1: $r1")
+      val upper = r1.captureSet
+      println(i"extrapolate.upper: $upper")
+      def isExact =
+        upper.isAlwaysEmpty
+        || upper.isConst && upper.elems.size == 1 && upper.elems.contains(r1)
+        || r.derivesFrom(defn.Caps_CapSet)
+      println(i"extrapolate.isExact: $isExact")
+      if variance > 0 || isExact then upper
+      else if variance < 0 then CaptureSet.EmptyWithProvenance(r, r1)
+      else upper.maybe
+    catch
+      case ex:Throwable =>
+        println(i"error in extrapolate $r")
+        throw ex
 
   /** Apply `f` to each element in `xs`, and join result sets with `++` */
   def mapRefs(xs: Refs, f: CaptureRef => CaptureSet)(using Context): CaptureSet =

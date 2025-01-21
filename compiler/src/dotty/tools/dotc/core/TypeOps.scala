@@ -464,11 +464,21 @@ object TypeOps:
       try
         tp match
           case tp: TermRef if toAvoid(tp) =>
-            tp.info.widenExpr.dealias match {
-              case info: SingletonType => apply(info)
-              case info => range(defn.NothingType, apply(info))
+            println(i"Avoiding TermRef $tp")
+            val widened = tp.info.widenExpr.dealias
+            println(i"widened = $widened")
+            widened match {
+              case info: SingletonType => println("SingletonType! $info"); apply(info)
+              case info =>
+                println(i"Other type: $info")
+                val info2 = apply(info)
+                println(i"info2 = $info2")
+                val rng = range(defn.NothingType, info2)
+                println(i"range = $rng")
+                rng
             }
           case tp: TypeRef if toAvoid(tp) =>
+            println(i"Avoiding TypeRef $tp")
             tp.info match {
               case info: AliasingBounds =>
                 apply(info.alias)
@@ -485,13 +495,16 @@ object TypeOps:
             // it must be a class that encloses the block whose type is to be avoided.
             tp
           case tp: LazyRef =>
+            println(i"Avoiding LazyRef $tp")
             if localParamRefs.contains(tp.ref) then tp
             else if isExpandingBounds then emptyRange
             else mapOver(tp)
           case tl: HKTypeLambda =>
+            println(i"Avoiding HKTypeLambda $tl")
             localParamRefs ++= tl.paramRefs
             mapOver(tl)
           case _ =>
+            println(i"Avoiding $tp with super")
             super.apply(tp)
       catch case ex: Throwable =>
         handleRecursive("traversing for avoiding local references", s"${tp.show}" , ex)
@@ -561,15 +574,31 @@ object TypeOps:
 
       override def apply(tp: Type): Type = tp match
         case tp: TypeVar if mapCtx.typerState.constraint.contains(tp) =>
+          println(i"avoid $tp in AvoidMap")
           val lo = TypeComparer.instanceType(
             tp.origin,
             fromBelow = variance > 0 || variance == 0 && tp.hasLowerBound,
             tp.widenPolicy)(using mapCtx)
           val lo1 = apply(lo)
+          println(i"avoid $tp in AvoidMap: lo = $lo, lo1 = $lo1")
           if (lo1 ne lo) lo1 else tp
         case _ =>
           super.apply(tp)
       end apply
+
+      override protected def mapCapturingType(tp: Type, parent: Type, refs: CaptureSet, v: Int): Type =
+        println(i"avoid: capturing $tp in $parent with $refs and variance $v")
+        val saved = variance
+        variance = v
+        try
+          val mappedParent = this(parent)
+          val mappedRefs = refs.map(this)
+          println(i"avoid: mapped parent: $mappedParent, refs: $mappedRefs")
+          val derived = derivedCapturingType(tp, this(parent), refs.map(this))
+          println(i"avoid: derived: $derived")
+          derived
+        finally variance = saved
+      end mapCapturingType
     }
 
     widenMap(tp)

@@ -367,7 +367,10 @@ abstract class Recheck extends Phase, SymTransformer:
     private def recheckBlock(stats: List[Tree], expr: Tree)(using Context): Type =
       recheckStats(stats)
       val exprType = recheck(expr)
-      TypeOps.avoid(exprType, localSyms(stats).filterConserve(_.isTerm))
+      val symsToAvoid = localSyms(stats).filterConserve(_.isTerm)
+      println(i"recheck block stats: $stats%, %, expr: $expr : $exprType")
+      println(i"avoid($exprType, $symsToAvoid)")
+      TypeOps.avoid(exprType, symsToAvoid)
 
     def recheckBlock(tree: Block, pt: Type)(using Context): Type = tree match
       case Block(Nil, expr: Block) => recheckBlock(expr, pt)
