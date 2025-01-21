@@ -18,6 +18,7 @@ import TypeComparer.subsumesExistentially
 import util.common.alwaysTrue
 import scala.collection.{mutable, immutable}
 import CCState.*
+import dotty.tools.dotc.core.TypeOps.AvoidMap
 
 /** A class for capture sets. Capture sets can be constants or variables.
  *  Capture sets support inclusion constraints <:< where <:< is subcapturing.
@@ -297,6 +298,15 @@ sealed abstract class CaptureSet extends Showable:
       else BiMapped(asVar, tm, mappedElems)
     case tm: IdentityCaptRefMap =>
       this
+    case av: AvoidMap =>
+      val mapped = mapRefs(elems, ref => ref match
+        case n: NamedType if av.toAvoid(n) => empty //TODO what about variance?
+        case r => extrapolateCaptureRef(r, av, av.variance)
+      )
+      if isConst then
+        if mapped.isConst && mapped.elems == elems && !mapped.keepAlways then this
+        else mapped
+      else Mapped(asVar, av, av.variance, mapped)
     case _ =>
       val mapped = mapRefs(elems, tm, tm.variance)
       if isConst then
